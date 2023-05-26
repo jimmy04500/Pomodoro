@@ -14,6 +14,7 @@
 		E56330732A20480A005D2066 /* PomodoroTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E56330722A20480A005D2066 /* PomodoroTests.swift */; };
 		E563307D2A20480A005D2066 /* PomodoroUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E563307C2A20480A005D2066 /* PomodoroUITests.swift */; };
 		E563307F2A20480A005D2066 /* PomodoroUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E563307E2A20480A005D2066 /* PomodoroUITestsLaunchTests.swift */; };
+		E563308C2A2048C5005D2066 /* PomodoroData.swift in Sources */ = {isa = PBXBuildFile; fileRef = E563308B2A2048C5005D2066 /* PomodoroData.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,6 +45,7 @@
 		E56330782A20480A005D2066 /* PomodoroUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PomodoroUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E563307C2A20480A005D2066 /* PomodoroUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroUITests.swift; sourceTree = "<group>"; };
 		E563307E2A20480A005D2066 /* PomodoroUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		E563308B2A2048C5005D2066 /* PomodoroData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroData.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +100,7 @@
 				E56330632A204809005D2066 /* ContentView.swift */,
 				E56330652A20480A005D2066 /* Assets.xcassets */,
 				E56330672A20480A005D2066 /* Preview Content */,
+				E563308B2A2048C5005D2066 /* PomodoroData.swift */,
 			);
 			path = Pomodoro;
 			sourceTree = "<group>";
@@ -259,6 +262,7 @@
 			files = (
 				E56330642A204809005D2066 /* ContentView.swift in Sources */,
 				E56330622A204809005D2066 /* PomodoroApp.swift in Sources */,
+				E563308C2A2048C5005D2066 /* PomodoroData.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
