@@ -22,7 +22,7 @@ struct VisualCountdownTimerShape: Shape {
 
         var path = Path()
 
-        if percentFilled >= 1.0 {
+        if percentFilled >= 1.0 || percentFilled < 0 {
             path.addEllipse(in: CGRect(x: center.x - radius, y: center.y - radius, width: 2 * radius, height: 2 * radius))
         } else {
             let start = CGPoint(
@@ -45,13 +45,10 @@ struct VisualCountdownTimerShape: Shape {
 struct VisualCountdownTimerView: View {
     var percentFilled: Double
     var backgroundColor: Color
-    var shouldAnimate: Bool
-    var animationDuration: Double
     
     var body: some View {
         VisualCountdownTimerShape(percentFilled: percentFilled)
             .fill(backgroundColor)
-            .animation(shouldAnimate ? .linear(duration: animationDuration) : nil, value: percentFilled)
     }
 }
 
@@ -66,28 +63,34 @@ struct ContentView: View {
     var body: some View {
         VStack {
             if pomodoroViewModel.currentStep == .PomodoroNotStarted {
-                Text("Start Pomodoro \(pomodoroViewModel.completedPomodoros+1)/4")
-                Button(action: pomodoroViewModel.startPomodoro) {
-                    Text("Start")
+                HStack {
+                    Text("Start Pomodoro \(pomodoroViewModel.completedPomodoros+1)/4")
+                    Button(action: pomodoroViewModel.startPomodoro) {
+                        Text("Start")
+                    }
                 }
             } else if pomodoroViewModel.currentStep == .PomodoroInProgress {
                 Text("Work Hard! \(pomodoroViewModel.displayTimeRemaining)")
             } else if pomodoroViewModel.currentStep == .ShortBreakNotStarted {
-                Text("Start Short Break")
-                Button(action: pomodoroViewModel.startShortBreak) {
-                    Text("Start")
+                HStack {
+                    Text("Start Short Break")
+                    Button(action: pomodoroViewModel.startShortBreak) {
+                        Text("Start")
+                    }
                 }
             } else if pomodoroViewModel.currentStep == .ShortBreakInProgress {
                 Text("Short Break \(pomodoroViewModel.displayTimeRemaining)")
             } else if pomodoroViewModel.currentStep == .LongBreakNotStarted {
-                Text("Start Long Break")
-                Button(action: pomodoroViewModel.startLongBreak) {
-                    Text("Start")
+                HStack {
+                    Text("Start Long Break")
+                    Button(action: pomodoroViewModel.startLongBreak) {
+                        Text("Start")
+                    }
                 }
             } else if pomodoroViewModel.currentStep == .LongBreakInProgress {
                 Text("Long Break \(pomodoroViewModel.displayTimeRemaining)")
             }
-            VisualCountdownTimerView(percentFilled: pomodoroViewModel.percentTimeRemaining, backgroundColor: Color.red, shouldAnimate: true, animationDuration: 1)
+            VisualCountdownTimerView(percentFilled: pomodoroViewModel.percentTimeRemaining, backgroundColor: Color.red)
         }
         .padding()
     }

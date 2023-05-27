@@ -19,36 +19,36 @@ enum PomodoroType {
 
 struct PomodoroData {
     var currentStep: PomodoroType
-    var timeRemaining: Int
+    var timeRemaining: Double
     var completedPomodoros: Int
     
-    var pomodoroDuration = 10
-    var shortBreakDuration = 5
-    var longBreakDuration = 5
-    var numPomosForLongBreak = 4
+    var pomodoroDuration: Double = 25 * 60
+    var shortBreakDuration: Double = 5
+    var longBreakDuration: Double = 5
+    var numPomosForLongBreak: Int = 4
 }
 
 class PomodoroViewModel: ObservableObject {
     private var data: PomodoroData = PomodoroData(currentStep: .PomodoroNotStarted, timeRemaining: 0, completedPomodoros: 0) {
         didSet {
-            let minutes = data.timeRemaining / 60
-            let seconds = data.timeRemaining % 60
+            let minutes = Int(data.timeRemaining / 60)
+            let seconds = Int(data.timeRemaining.truncatingRemainder(dividingBy: 60))
             displayTimeRemaining = String(format: "%02d:%02d", minutes, seconds)
             
             switch currentStep {
             case .PomodoroInProgress:
                 percentTimeRemaining = Double(data.timeRemaining) / Double(data.pomodoroDuration)
-                print("Percent time remaining \(percentTimeRemaining)")
+//                print("Percent time remaining \(percentTimeRemaining)")
             case .ShortBreakInProgress:
                 percentTimeRemaining = Double(data.timeRemaining) / Double(data.shortBreakDuration)
+//                print("Percent time remaining \(percentTimeRemaining)")
             case .LongBreakInProgress:
                 percentTimeRemaining = Double(data.timeRemaining) / Double(data.longBreakDuration)
             default:
-                print("hi")
+                percentTimeRemaining = 1
             }
             
             currentStep = data.currentStep
-            
             completedPomodoros = data.completedPomodoros
         }
     }
@@ -59,17 +59,17 @@ class PomodoroViewModel: ObservableObject {
     @Published var currentStep = PomodoroType.PomodoroNotStarted
     @Published var completedPomodoros = 0
     
-    private func startTimer(duration: Int, completion: @escaping () -> Void) {
+    private func startTimer(duration: Double, completion: @escaping () -> Void) {
         data.timeRemaining = duration
         
+        let timeInterval = 0.02
         timer?.invalidate()
-        data.timeRemaining -= 1
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            if self.data.timeRemaining == 0 {
+        timer = Timer.scheduledTimer(withTimeInterval: timeInterval, repeats: true) { _ in
+            if self.data.timeRemaining <= 0 {
                 self.timer?.invalidate()
                 completion()
             } else {
-                self.data.timeRemaining -= 1
+                self.data.timeRemaining -= timeInterval
             }
         }
     }
