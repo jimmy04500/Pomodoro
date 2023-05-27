@@ -45,10 +45,13 @@ struct VisualCountdownTimerShape: Shape {
 struct VisualCountdownTimerView: View {
     var percentFilled: Double
     var backgroundColor: Color
+    var shouldAnimate: Bool
+    var animationDuration: Double
     
     var body: some View {
         VisualCountdownTimerShape(percentFilled: percentFilled)
             .fill(backgroundColor)
+            .animation(shouldAnimate ? .linear(duration: animationDuration) : nil, value: percentFilled)
     }
 }
 
@@ -56,16 +59,20 @@ struct VisualCountdownTimerView: View {
 struct ContentView: View {
     @StateObject var pomodoroViewModel: PomodoroViewModel
     
-    @State private var percentFilled: Double = 0.99
+    @State private var percentFilled: Double = 1.0
+    @State private var shouldAnimate: Bool = true
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     var body: some View {
         VStack {
-            VisualCountdownTimerView(percentFilled: percentFilled, backgroundColor: Color.red)
-                .animation(.linear(duration: 1), value: percentFilled)
+            VisualCountdownTimerView(percentFilled: percentFilled, backgroundColor: Color.red, shouldAnimate: shouldAnimate, animationDuration: 1)
                 .onReceive(timer) { _ in
                     if self.percentFilled <= 0 {
+                        self.shouldAnimate = false
                         self.percentFilled = 1.0
+                    }
+                    else {
+                        self.shouldAnimate = true
                     }
                     self.percentFilled -= 0.1
                 }
