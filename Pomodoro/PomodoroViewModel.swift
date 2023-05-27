@@ -22,7 +22,7 @@ struct PomodoroData {
     var timeRemaining: Int
     var completedPomodoros: Int
     
-    var pomodoroDuration = 5
+    var pomodoroDuration = 10
     var shortBreakDuration = 5
     var longBreakDuration = 5
     var numPomosForLongBreak = 4
@@ -35,6 +35,18 @@ class PomodoroViewModel: ObservableObject {
             let seconds = data.timeRemaining % 60
             displayTimeRemaining = String(format: "%02d:%02d", minutes, seconds)
             
+            switch currentStep {
+            case .PomodoroInProgress:
+                percentTimeRemaining = Double(data.timeRemaining) / Double(data.pomodoroDuration)
+                print("Percent time remaining \(percentTimeRemaining)")
+            case .ShortBreakInProgress:
+                percentTimeRemaining = Double(data.timeRemaining) / Double(data.shortBreakDuration)
+            case .LongBreakInProgress:
+                percentTimeRemaining = Double(data.timeRemaining) / Double(data.longBreakDuration)
+            default:
+                print("hi")
+            }
+            
             currentStep = data.currentStep
             
             completedPomodoros = data.completedPomodoros
@@ -43,21 +55,23 @@ class PomodoroViewModel: ObservableObject {
     private var timer: Timer? = nil
     
     @Published var displayTimeRemaining = "00:00"
+    @Published var percentTimeRemaining = 1.0
     @Published var currentStep = PomodoroType.PomodoroNotStarted
     @Published var completedPomodoros = 0
     
     private func startTimer(duration: Int, completion: @escaping () -> Void) {
-       data.timeRemaining = duration
-       
-       timer?.invalidate()
-       timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-           self.data.timeRemaining -= 1
-           
-           if self.data.timeRemaining == 0 {
-               self.timer?.invalidate()
-               completion()
-           }
-       }
+        data.timeRemaining = duration
+        
+        timer?.invalidate()
+        data.timeRemaining -= 1
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            if self.data.timeRemaining == 0 {
+                self.timer?.invalidate()
+                completion()
+            } else {
+                self.data.timeRemaining -= 1
+            }
+        }
     }
     
     func startPomodoro() {
@@ -73,8 +87,10 @@ class PomodoroViewModel: ObservableObject {
             if self.data.completedPomodoros == self.data.numPomosForLongBreak {
                 self.data.currentStep = .LongBreakNotStarted
                 self.data.completedPomodoros = 0
+                self.data.timeRemaining = self.data.longBreakDuration
             } else {
                 self.data.currentStep = .ShortBreakNotStarted
+                self.data.timeRemaining = self.data.shortBreakDuration
             }
         }
     }
@@ -86,8 +102,10 @@ class PomodoroViewModel: ObservableObject {
         }
         
         data.currentStep = .ShortBreakInProgress
+        data.timeRemaining = data.shortBreakDuration
         startTimer(duration: data.shortBreakDuration) {
             self.data.currentStep = .PomodoroNotStarted
+            self.data.timeRemaining = self.data.pomodoroDuration
         }
     }
     
@@ -98,8 +116,10 @@ class PomodoroViewModel: ObservableObject {
         }
         
         data.currentStep = .LongBreakInProgress
+        data.timeRemaining = data.longBreakDuration
         startTimer(duration: data.longBreakDuration) {
             self.data.currentStep = .PomodoroNotStarted
+            self.data.timeRemaining = self.data.pomodoroDuration
         }
     }
 }

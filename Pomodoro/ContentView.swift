@@ -65,18 +65,6 @@ struct ContentView: View {
     
     var body: some View {
         VStack {
-            VisualCountdownTimerView(percentFilled: percentFilled, backgroundColor: Color.red, shouldAnimate: shouldAnimate, animationDuration: 1)
-                .onReceive(timer) { _ in
-                    if self.percentFilled <= 0 {
-                        self.shouldAnimate = false
-                        self.percentFilled = 1.0
-                    }
-                    else {
-                        self.shouldAnimate = true
-                    }
-                    self.percentFilled -= 0.1
-                }
-            
             if pomodoroViewModel.currentStep == .PomodoroNotStarted {
                 Text("Start Pomodoro \(pomodoroViewModel.completedPomodoros+1)/4")
                 Button(action: pomodoroViewModel.startPomodoro) {
@@ -99,6 +87,7 @@ struct ContentView: View {
             } else if pomodoroViewModel.currentStep == .LongBreakInProgress {
                 Text("Long Break \(pomodoroViewModel.displayTimeRemaining)")
             }
+            VisualCountdownTimerView(percentFilled: pomodoroViewModel.percentTimeRemaining, backgroundColor: Color.red, shouldAnimate: true, animationDuration: 1)
         }
         .padding()
     }
