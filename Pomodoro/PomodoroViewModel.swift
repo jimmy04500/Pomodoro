@@ -7,139 +7,20 @@
 
 import Foundation
 import Combine
-
-enum PomodoroStep {
-    case pomodoro
-    case shortBreak
-    case longBreak
-}
-
-enum PomodoroState {
-    case notStarted
-    case inProgress
-    case paused
-}
-
-struct PomodoroData {
-    var currentStep: PomodoroStep
-    var currentState: PomodoroState
-    var timeRemaining: TimeInterval
-    var timerInProgress: Bool
-    var completedPomodoros: Int
-    
-    var pomodoroDuration: Double = 10
-    var shortBreakDuration: Double = 10
-    var longBreakDuration: Double = 10
-    var numPomosForLongBreak: Int = 4
-    
-    func percentTimeRemaining() -> Double {
-        guard currentState == .inProgress || currentState == .paused else {
-            return 1.0
-        }
-        
-        switch currentStep {
-        case .pomodoro:
-            return timeRemaining / pomodoroDuration
-        case .shortBreak:
-            return timeRemaining / shortBreakDuration
-        case .longBreak:
-            return timeRemaining / longBreakDuration
-        }
-    }
-}
-
-class PomodoroManager: ObservableObject {
-    @Published var data: PomodoroData
-    
-    init() {
-        data = PomodoroData(currentStep: .pomodoro, currentState: .notStarted, timeRemaining: 0, timerInProgress: false, completedPomodoros: 0)
-    }
-    
-    func decrementTimeRemaining(delta: TimeInterval) {
-        guard data.currentState == .inProgress else {
-            fatalError("Invalid state \(data.currentStep) \(data.currentState)")
-        }
-        
-        let resultTimeRemaining = data.timeRemaining - delta
-        if resultTimeRemaining <= 0 {
-            data.timerInProgress = false
-            switch data.currentStep {
-            case .pomodoro:
-                data.completedPomodoros += 1
-                if data.completedPomodoros == data.numPomosForLongBreak {
-                    data.currentStep = .longBreak
-                } else {
-                    data.currentStep = .shortBreak
-                }
-            case .shortBreak:
-                data.currentStep = .pomodoro
-            case .longBreak:
-                data.currentStep = .pomodoro
-                data.completedPomodoros = 0
-            }
-            data.currentState = .notStarted
-        } else {
-            data.timeRemaining = resultTimeRemaining
-        }
-    }
-    
-    func start(step: PomodoroStep) {
-        guard data.currentState == .notStarted else {
-            fatalError("Invalid state")
-        }
-        
-        switch step {
-        case .pomodoro:
-            data.timeRemaining = data.pomodoroDuration
-        case .shortBreak:
-            data.timeRemaining = data.shortBreakDuration
-        case .longBreak:
-            data.timeRemaining = data.longBreakDuration
-        }
-        
-        data.timerInProgress = true
-        data.currentState = .inProgress
-    }
-    
-    func pause(step: PomodoroStep) {
-        guard data.currentState == .inProgress else {
-            fatalError("Invalid state")
-        }
-        
-        data.timerInProgress = false
-        data.currentState = .paused
-    }
-    
-    func resume(step: PomodoroStep) {
-        guard data.currentState == .paused else {
-            fatalError("Invalid state")
-        }
-        
-        data.timerInProgress = true
-        data.currentState = .inProgress
-    }
-    
-    func stop() {
-        data.timerInProgress = false
-        data.currentStep = .pomodoro
-        data.currentState = .notStarted
-        data.completedPomodoros = 0
-    }
-}
+import SwiftUI
 
 class PomodoroViewModel: ObservableObject {
     private let manager = PomodoroManager()
     private var timer: Timer? = nil
+    let timerDownAnimation: Animation = .linear(duration: 1.0)
+    let timerResetAnimation: Animation = .easeInOut(duration: 0.5)
     
     @Published var displayTimeRemaining = "00:00"
-    @Published var percentTimeRemaining = 1.0 {
-        didSet {
-            print("Set time remaining \(percentTimeRemaining)")
-        }
-    }
+    @Published var percentTimeRemaining = 1.0
     @Published var currentStep = PomodoroStep.pomodoro
     @Published var currentState = PomodoroState.notStarted
     @Published var completedPomodoros = 0
+    @Published var animation = Animation.linear(duration: 1.0)
     
     private var cancellables = Set<AnyCancellable>()
     
@@ -193,27 +74,24 @@ class PomodoroViewModel: ObservableObject {
                 self.completedPomodoros = completedPomodoros
             }
             .store(in: &cancellables)
-        
-        manager.$data
-            .sink { data in
-                self.percentTimeRemaining = data.percentTimeRemaining()
-            }
-            .store(in: &cancellables)
     }
     
     private func startTimer(duration: Double) {
-        let timeInterval = 0.02
+        animation = timerDownAnimation
+        let timeInterval = 1.0
         manager.decrementTimeRemaining(delta: timeInterval)
+        percentTimeRemaining = manager.data.percentTimeRemaining()
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: timeInterval, repeats: true) { _ in
-            print("Before \(self.manager.data.currentStep) \(self.manager.data.currentState)")
             if !self.manager.data.timerInProgress {
                 self.timer?.invalidate()
+                self.animation = self.timerResetAnimation
+                self.percentTimeRemaining = 1.0
                 return
             }
+            self.animation = self.timerDownAnimation
             self.manager.decrementTimeRemaining(delta: timeInterval)
-            
-            print("After \(self.manager.data.currentStep) \(self.manager.data.currentState)")
+            self.percentTimeRemaining = self.manager.data.percentTimeRemaining()
         }
     }
     
