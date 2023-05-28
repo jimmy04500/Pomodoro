@@ -49,16 +49,13 @@ struct VisualCountdownTimerView: View {
     var body: some View {
         VisualCountdownTimerShape(percentFilled: percentFilled)
             .fill(backgroundColor)
+            .animation(.linear, value: backgroundColor)
     }
 }
 
 
 struct ContentView: View {
     @StateObject var pomodoroViewModel: PomodoroViewModel
-    
-    @State private var percentFilled: Double = 1.0
-    @State private var shouldAnimate: Bool = true
-    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     var body: some View {
         VStack {
