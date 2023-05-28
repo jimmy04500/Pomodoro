@@ -57,6 +57,17 @@ struct VisualCountdownTimerView: View {
 struct ContentView: View {
     @StateObject var pomodoroViewModel: PomodoroViewModel
     
+    var backgroundColor: Color {
+        switch pomodoroViewModel.currentStep {
+        case .PomodoroInProgress, .PomodoroNotStarted:
+            return .red
+        case .ShortBreakInProgress, .ShortBreakNotStarted:
+            return .green
+        case .LongBreakInProgress, .LongBreakNotStarted:
+            return .blue
+        }
+    }
+    
     var body: some View {
         VStack {
             if pomodoroViewModel.currentStep == .PomodoroNotStarted {
@@ -87,7 +98,7 @@ struct ContentView: View {
             } else if pomodoroViewModel.currentStep == .LongBreakInProgress {
                 Text("Long Break \(pomodoroViewModel.displayTimeRemaining)")
             }
-            VisualCountdownTimerView(percentFilled: pomodoroViewModel.percentTimeRemaining, backgroundColor: Color.red)
+            VisualCountdownTimerView(percentFilled: pomodoroViewModel.percentTimeRemaining, backgroundColor: backgroundColor)
         }
         .padding()
     }

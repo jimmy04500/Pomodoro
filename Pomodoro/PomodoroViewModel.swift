@@ -186,7 +186,7 @@ class PomodoroViewModel: ObservableObject {
     }
     
     private func startTimer(duration: Double) {
-        let timeInterval = 0.2
+        let timeInterval = 0.02
         manager.decrementTimeRemaining(delta: timeInterval)
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: timeInterval, repeats: true) { _ in
