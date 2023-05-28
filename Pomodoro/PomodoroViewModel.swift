@@ -11,14 +11,32 @@ import Combine
 enum PomodoroType {
     case PomodoroNotStarted
     case PomodoroInProgress
+    case PomodoroPaused
     case ShortBreakNotStarted
     case ShortBreakInProgress
+    case ShortBreakPaused
     case LongBreakNotStarted
     case LongBreakInProgress
+    case LongBreakPaused
+}
+
+enum PomodoroStep {
+    case pomodoro
+    case shortBreak
+    case longBreak
+}
+
+enum PomodoroState {
+    case notStarted
+    case inProgress
+    case paused
 }
 
 struct PomodoroData {
-    var currentStep: PomodoroType
+//    var currentStep: PomodoroType
+    
+    var currentStep: PomodoroStep
+    var currentState: PomodoroState
     var timeRemaining: TimeInterval
     var timerInProgress: Bool
     var completedPomodoros: Int
@@ -29,21 +47,17 @@ struct PomodoroData {
     var numPomosForLongBreak: Int = 4
     
     func percentTimeRemaining() -> Double {
-        guard currentStep == .PomodoroInProgress ||
-                currentStep == .ShortBreakInProgress ||
-                currentStep == .LongBreakInProgress else {
+        guard currentState == .inProgress else {
             return 0.0
         }
         
         switch currentStep {
-        case .PomodoroInProgress:
+        case .pomodoro:
             return timeRemaining / pomodoroDuration
-        case .ShortBreakInProgress:
+        case .shortBreak:
             return timeRemaining / shortBreakDuration
-        case .LongBreakInProgress:
+        case .longBreak:
             return timeRemaining / longBreakDuration
-        default:
-            fatalError("Invalid state \(currentStep)")
         }
     }
 }
@@ -52,13 +66,11 @@ class PomodoroManager: ObservableObject {
     @Published var data: PomodoroData
     
     init() {
-        data = PomodoroData(currentStep: .PomodoroNotStarted, timeRemaining: 0, timerInProgress: false, completedPomodoros: 0)
+        data = PomodoroData(currentStep: .pomodoro, currentState: .notStarted, timeRemaining: 0, timerInProgress: false, completedPomodoros: 0)
     }
     
     func decrementTimeRemaining(delta: TimeInterval) {
-        guard data.currentStep == .PomodoroInProgress ||
-                data.currentStep == .ShortBreakInProgress ||
-                data.currentStep == .LongBreakInProgress else {
+        guard data.currentState == .inProgress else {
             fatalError("Invalid state \(data.currentStep)")
         }
         
@@ -66,68 +78,60 @@ class PomodoroManager: ObservableObject {
         if resultTimeRemaining <= 0 {
             data.timerInProgress = false
             switch data.currentStep {
-            case .PomodoroInProgress:
+            case .pomodoro:
                 data.completedPomodoros += 1
                 if data.completedPomodoros == data.numPomosForLongBreak {
-                    data.currentStep = .LongBreakNotStarted
+                    data.currentStep = .longBreak
                 } else {
-                    data.currentStep = .ShortBreakNotStarted
+                    data.currentStep = .shortBreak
                 }
-            case .ShortBreakInProgress:
-                data.currentStep = .PomodoroNotStarted
-            case .LongBreakInProgress:
+            case .shortBreak:
+                data.currentStep = .pomodoro
+            case .longBreak:
+                data.currentStep = .pomodoro
                 data.completedPomodoros = 0
-                data.currentStep = .PomodoroNotStarted
-            default:
-                print("Invalid state")
-                return
             }
+            data.currentState = .notStarted
         } else {
             data.timeRemaining = resultTimeRemaining
         }
     }
     
-    func startPomodoro() {
-        guard data.currentStep == .PomodoroNotStarted else {
-            return
+    func start(step: PomodoroStep) {
+        guard data.currentState == .notStarted else {
+            fatalError("Invalid state")
         }
         
-        data.currentStep = .PomodoroInProgress
-        data.timeRemaining = data.pomodoroDuration
-        data.timerInProgress = true
-    }
-    
-//    func finishPomodoro() {
-//
-//    }
-    
-    func startShortBreak() {
-        guard data.currentStep == .ShortBreakNotStarted else {
-            return
+        switch step {
+        case .pomodoro:
+            data.timeRemaining = data.pomodoroDuration
+        case .shortBreak:
+            data.timeRemaining = data.shortBreakDuration
+        case .longBreak:
+            data.timeRemaining = data.longBreakDuration
         }
         
-        data.currentStep = .ShortBreakInProgress
-        data.timeRemaining = data.shortBreakDuration
         data.timerInProgress = true
+        data.currentState = .inProgress
     }
     
-//    func finishShortBreak() {
-//
-//    }
-    
-    func startLongBreak() {
-        guard data.currentStep == .LongBreakNotStarted else {
-            return
+    func pause(step: PomodoroStep) {
+        guard data.currentState == .inProgress else {
+            fatalError("Invalid state")
         }
         
-        data.currentStep = .LongBreakInProgress
-        data.timeRemaining = data.longBreakDuration
-        data.timerInProgress = true
+        data.timerInProgress = false
+        data.currentState = .paused
     }
     
-//    func finishLongBreak() {
-//
-//    }
+    func resume(step: PomodoroStep) {
+        guard data.currentState == .paused else {
+            fatalError("Invalid state")
+        }
+        
+        data.timerInProgress = true
+        data.currentState = .inProgress
+    }
 }
 
 class PomodoroViewModel: ObservableObject {
@@ -136,7 +140,8 @@ class PomodoroViewModel: ObservableObject {
     
     @Published var displayTimeRemaining = "00:00"
     @Published var percentTimeRemaining = 1.0
-    @Published var currentStep = PomodoroType.PomodoroNotStarted
+    @Published var currentStep = PomodoroStep.pomodoro
+    @Published var currentState = PomodoroState.notStarted
     @Published var completedPomodoros = 0
     
     private var cancellables = Set<AnyCancellable>()
@@ -155,6 +160,7 @@ class PomodoroViewModel: ObservableObject {
                 self.displayTimeRemaining = String(format: "%02d:%02d", minutes, seconds)
             }
             .store(in: &cancellables)
+        
         manager.$data
             .removeDuplicates { before, after in
                 before.currentStep == after.currentStep
@@ -166,10 +172,22 @@ class PomodoroViewModel: ObservableObject {
                 self.currentStep = currentStep
             }
             .store(in: &cancellables)
+        
+        manager.$data
+            .removeDuplicates { before, after in
+                before.currentState == after.currentState
+            }
+            .map { data in
+                data.currentState
+            }
+            .sink { currentState in
+                self.currentState = currentState
+            }
+            .store(in: &cancellables)
+        
         manager.$data
             .removeDuplicates { before, after in
                 before.completedPomodoros == after.completedPomodoros
-                
             }
             .map { data in
                 data.completedPomodoros
@@ -178,6 +196,7 @@ class PomodoroViewModel: ObservableObject {
                 self.completedPomodoros = completedPomodoros
             }
             .store(in: &cancellables)
+        
         manager.$data
             .sink { data in
                 self.percentTimeRemaining = data.percentTimeRemaining()
@@ -197,19 +216,17 @@ class PomodoroViewModel: ObservableObject {
         }
     }
     
-    func startPomodoro() {
-        manager.startPomodoro()
-        startTimer(duration: manager.data.pomodoroDuration)
-    }
-    
-    func startShortBreak() {
-        manager.startShortBreak()
-        startTimer(duration: manager.data.shortBreakDuration)
-    }
-    
-    func startLongBreak() {
-        manager.startLongBreak()
-        startTimer(duration: manager.data.longBreakDuration)
+    func start(pomodoroStep: PomodoroStep) {
+        manager.start(step: pomodoroStep)
+        
+        switch pomodoroStep {
+        case .pomodoro:
+            startTimer(duration: manager.data.pomodoroDuration)
+        case .shortBreak:
+            startTimer(duration: manager.data.shortBreakDuration)
+        case .longBreak:
+            startTimer(duration: manager.data.longBreakDuration)
+        }
     }
 }
 
