@@ -56,49 +56,130 @@ struct VisualCountdownTimerView: View {
 
 struct ContentView: View {
     @StateObject var pomodoroViewModel: PomodoroViewModel
+    @State private var showAlert = false
     
     var backgroundColor: Color {
         switch pomodoroViewModel.currentStep {
-        case .PomodoroInProgress, .PomodoroNotStarted:
+        case .pomodoro:
             return .red
-        case .ShortBreakInProgress, .ShortBreakNotStarted:
+        case .shortBreak:
             return .green
-        case .LongBreakInProgress, .LongBreakNotStarted:
+        case .longBreak:
             return .blue
         }
     }
     
     var body: some View {
         VStack {
-            if pomodoroViewModel.currentStep == .PomodoroNotStarted {
-                HStack {
-                    Text("Start Pomodoro \(pomodoroViewModel.completedPomodoros+1)/4")
-                    Button(action: pomodoroViewModel.startPomodoro) {
-                        Text("Start")
+            if pomodoroViewModel.currentStep == .pomodoro {
+                if pomodoroViewModel.currentState == .notStarted {
+                    HStack {
+                        Text("Start Pomodoro \(pomodoroViewModel.completedPomodoros+1)/4")
+                        Button(action: {
+                            pomodoroViewModel.start(pomodoroStep: .pomodoro)
+                        }) {
+                            Text("Start")
+                        }
+                    }
+                } else if pomodoroViewModel.currentState == .inProgress {
+                    HStack {
+                        Text("Work Hard! \(pomodoroViewModel.displayTimeRemaining)")
+                        Button(action: {
+                            pomodoroViewModel.pause(pomodoroStep: .pomodoro)
+                        }) {
+                            Text("Pause")
+                        }
+                        Button(action: {
+                            showAlert = true
+                        }) {
+                            Text("Stop")
+                        }
+                    }
+                } else if pomodoroViewModel.currentState == .paused {
+                    HStack {
+                        Text("Pomodoro Paused")
+                        Button(action: {
+                            pomodoroViewModel.resume(pomodoroStep: .pomodoro)
+                        }) {
+                            Text("Resume")
+                        }
                     }
                 }
-            } else if pomodoroViewModel.currentStep == .PomodoroInProgress {
-                Text("Work Hard! \(pomodoroViewModel.displayTimeRemaining)")
-            } else if pomodoroViewModel.currentStep == .ShortBreakNotStarted {
-                HStack {
-                    Text("Start Short Break")
-                    Button(action: pomodoroViewModel.startShortBreak) {
-                        Text("Start")
+            } else if pomodoroViewModel.currentStep == .shortBreak {
+                if pomodoroViewModel.currentState == .notStarted {
+                    HStack {
+                        Text("Start Short Break")
+                        Button(action: {
+                            pomodoroViewModel.start(pomodoroStep: .shortBreak)
+                        }) {
+                            Text("Start")
+                        }
+                    }
+                } else if pomodoroViewModel.currentState == .inProgress {
+                    HStack {
+                        Text("Short Break \(pomodoroViewModel.displayTimeRemaining)")
+                        Button(action: {
+                            
+                        }) {
+                            Text("Pause")
+                        }
+                        Button(action: {
+                            showAlert = true
+                        }) {
+                            Text("Stop")
+                        }
+                    }
+                } else if pomodoroViewModel.currentState == .paused {
+                    HStack {
+                        Text("Short Break Paused")
+                        Button(action: {
+                            pomodoroViewModel.resume(pomodoroStep: .shortBreak)
+                        }) {
+                            Text("Resume")
+                        }
                     }
                 }
-            } else if pomodoroViewModel.currentStep == .ShortBreakInProgress {
-                Text("Short Break \(pomodoroViewModel.displayTimeRemaining)")
-            } else if pomodoroViewModel.currentStep == .LongBreakNotStarted {
-                HStack {
-                    Text("Start Long Break")
-                    Button(action: pomodoroViewModel.startLongBreak) {
-                        Text("Start")
+            } else if pomodoroViewModel.currentStep == .longBreak {
+                if pomodoroViewModel.currentState == .notStarted {
+                    HStack {
+                        Text("Start Long Break")
+                        Button(action: {
+                            pomodoroViewModel.start(pomodoroStep: .longBreak)
+                        }) {
+                            Text("Start")
+                        }
+                    }
+                } else if pomodoroViewModel.currentState == .inProgress {
+                    HStack {
+                        Text("Short Break \(pomodoroViewModel.displayTimeRemaining)")
+                        Button(action: {
+                            
+                        }) {
+                            Text("Pause")
+                        }
+                        Button(action: {
+                            showAlert = true
+                        }) {
+                            Text("Stop")
+                        }
+                    }
+                } else if pomodoroViewModel.currentState == .paused {
+                    HStack {
+                        Text("Long Break Paused")
+                        Button(action: {
+                            pomodoroViewModel.resume(pomodoroStep: .longBreak)
+                        }) {
+                            Text("Resume")
+                        }
                     }
                 }
-            } else if pomodoroViewModel.currentStep == .LongBreakInProgress {
-                Text("Long Break \(pomodoroViewModel.displayTimeRemaining)")
             }
             VisualCountdownTimerView(percentFilled: pomodoroViewModel.percentTimeRemaining, backgroundColor: backgroundColor)
+        }
+        .confirmationDialog("Stop Pomodoro", isPresented: $showAlert) {
+            Button("Stop Pomodoro", role: .destructive) {
+                pomodoroViewModel.stop()
+            }
         }
         .padding()
     }
